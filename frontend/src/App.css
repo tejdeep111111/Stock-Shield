@@ -1,0 +1,37 @@
+body { margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif; background: #f4f7fb; color: #142033; }
+#root { max-width: 1280px; margin: 0 auto; padding: 16px; }
+.layout { display: grid; gap: 14px; }
+.header { display: flex; justify-content: space-between; align-items: start; background: #fff; border-radius: 10px; padding: 16px; }
+h1 { margin: 0; }
+h2 { margin: 0 0 10px; }
+h3 { margin: 0 0 6px; }
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.kpis article { background: #fff; border-radius: 10px; padding: 12px; }
+.kpis strong { font-size: 24px; }
+.panel { background: #fff; border-radius: 10px; padding: 12px; overflow-x: auto; }
+.grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.button { background: #0f62fe; color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.button.secondary { background: #374151; }
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.list li { display: flex; justify-content: space-between; align-items: center; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; }
+.regions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.region { border-radius: 8px; padding: 10px; color: #111827; }
+.region.low { background: #dcfce7; }
+.region.medium { background: #fef9c3; }
+.region.high { background: #fed7aa; }
+.region.critical { background: #fecaca; }
+.badge { border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.badge-critical { background: #fecaca; color: #7f1d1d; }
+.badge-high { background: #fed7aa; color: #9a3412; }
+.badge-medium { background: #fef08a; color: #854d0e; }
+.badge-low { background: #bbf7d0; color: #14532d; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 8px; vertical-align: top; }
+.form-grid { display: grid; gap: 8px; margin-bottom: 10px; }
+label { display: grid; gap: 4px; font-size: 14px; }
+input { border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; }
+.recommendation { border: 1px solid #bfdbfe; }
+@media (max-width: 1000px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-two { grid-template-columns: 1fr; }
+}
