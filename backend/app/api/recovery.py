@@ -4,19 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import RecoveryRun
+from ..models import RecoveryRun, RecoveryRunStrategy
 from ..schemas import RecoveryRunRecord, RecoveryRunRequest, RecoveryRunResponse
 from ..services.agent import run_recovery_analysis
 
 router = APIRouter(prefix="/api/recovery", tags=["recovery"])
 
-_recent_runs: dict[str, dict] = {}
-
-
 @router.post("/run", response_model=RecoveryRunResponse)
 def run_recovery(payload: RecoveryRunRequest, db: Session = Depends(get_db)):
     result = run_recovery_analysis(db, payload.product_ids, payload.region_ids, payload.budget, payload.scenario_id)
-    _recent_runs[result["run_id"]] = result
     return result
 
 
@@ -35,7 +31,22 @@ def get_run(run_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/runs/{run_id}/strategies")
-def get_run_strategies(run_id: str):
-    if run_id not in _recent_runs:
-        raise HTTPException(status_code=404, detail="Run details unavailable in current process")
-    return {"run_id": run_id, "strategies": _recent_runs[run_id]["strategies"]}
+def get_run_strategies(run_id: str, db: Session = Depends(get_db)):
+    rows = db.query(RecoveryRunStrategy).filter(RecoveryRunStrategy.run_id == run_id).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="Run strategies not found")
+    return {
+        "run_id": run_id,
+        "strategies": [
+            {
+                "strategy": row.strategy,
+                "success_probability": row.success_probability,
+                "arrival_days": row.arrival_days,
+                "units_recovered": row.units_recovered,
+                "revenue_protected": row.revenue_protected,
+                "cost": row.cost,
+                "net_value": row.net_value,
+            }
+            for row in rows
+        ],
+    }

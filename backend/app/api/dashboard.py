@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ def get_summary(db: Session = Depends(get_db)):
         revenue_protected=analysis["recommendation"]["expected_revenue_protected"],
         critical_supplier_risks=supplier_critical,
         average_days_to_stockout=round(sum(days) / len(days), 2) if days else 0.0,
-        last_analysis_timestamp=datetime.utcnow(),
+        last_analysis_timestamp=datetime.now(timezone.utc),
     )
 
 

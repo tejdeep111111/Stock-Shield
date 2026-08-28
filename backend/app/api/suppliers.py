@@ -35,7 +35,8 @@ def supplier_risk(supplier_id: int, db: Session = Depends(get_db)):
 
     disruptions = db.query(Disruption).filter(Disruption.active.is_(True), Disruption.supplier_id == supplier.id).all()
     disruption_factor = max([d.severity for d in disruptions], default=0.0)
-    capacity_pressure = min(1.0, 0.7)
+    recent_ordered_units = sum(s.ordered_units for s in shipments[-12:]) if shipments else 0
+    capacity_pressure = min(1.0, recent_ordered_units / max(1, supplier.capacity_units * 3))
     route_risk = 0.3
     risk = predict_supplier_delay(
         historical_delay_rate=historical_delay_rate,

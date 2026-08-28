@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from ..models import Disruption, Inventory, Product, RecoveryRun, Region, SalesHistory, Shipment, Supplier
+from ..models import (
+    Disruption,
+    Inventory,
+    Product,
+    RecoveryRun,
+    RecoveryRunStrategy,
+    Region,
+    SalesHistory,
+    Shipment,
+    Supplier,
+)
 from .forecasting import build_demand_forecast
 from .lost_revenue import predict_lost_revenue
 from .optimizer import optimize_recommendation
@@ -32,6 +42,10 @@ def run_recovery_analysis(db: Session, product_ids: list[int] | None, region_ids
     suppliers = {s.id: s for s in db.query(Supplier).all()}
 
     disruptions = db.query(Disruption).filter(Disruption.active.is_(True)).all()
+    all_shipments = db.query(Shipment).all()
+    shipments_by_supplier: dict[int, list[Shipment]] = defaultdict(list)
+    for shipment in all_shipments:
+        shipments_by_supplier[shipment.supplier_id].append(shipment)
 
     inventory_rows = db.query(Inventory).all()
     if product_ids:
@@ -73,7 +87,7 @@ def run_recovery_analysis(db: Session, product_ids: list[int] | None, region_ids
         if shift["shift_detected"]:
             shifts.append(f"{p.name} in {r.name}: {shift['change_percent']}% demand {shift['direction']}")
 
-        supplier_shipments = [s for s in db.query(Shipment).all() if s.supplier_id == supplier.id]
+        supplier_shipments = shipments_by_supplier.get(supplier.id, [])
         delay_rate = _historical_delay_rate(supplier_shipments)
         capacity_pressure = (inv.on_hand_units + inv.reserved_units) / max(1, supplier.capacity_units)
         route_risk = 0.35 if r.name in {"Northeast", "West"} else 0.2
@@ -181,6 +195,19 @@ def run_recovery_analysis(db: Session, product_ids: list[int] | None, region_ids
         expected_revenue_protected=recommendation["expected_revenue_protected"],
     )
     db.add(run)
+    for strategy in strategy_candidates:
+        db.add(
+            RecoveryRunStrategy(
+                run_id=run_id,
+                strategy=strategy["strategy"],
+                success_probability=strategy["success_probability"],
+                arrival_days=strategy["arrival_days"],
+                units_recovered=strategy["units_recovered"],
+                revenue_protected=strategy["revenue_protected"],
+                cost=strategy["cost"],
+                net_value=strategy["net_value"],
+            )
+        )
     db.commit()
 
     return {
@@ -193,5 +220,5 @@ def run_recovery_analysis(db: Session, product_ids: list[int] | None, region_ids
             "Recovery pipeline executed: forecast, supplier risk, regional shift, stockout, lost revenue, strategy scoring, optimization",
             *shifts[:8],
         ],
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(timezone.utc),
     }

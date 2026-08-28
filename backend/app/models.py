@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -104,8 +104,22 @@ class RecoveryRun(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     run_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     status: Mapped[str] = mapped_column(String(32), default="completed")
     scenario_id: Mapped[str] = mapped_column(String(128), default="default")
     recommendation: Mapped[str] = mapped_column(String(512), default="")
     expected_revenue_protected: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class RecoveryRunStrategy(Base):
+    __tablename__ = "recovery_run_strategies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), index=True)
+    strategy: Mapped[str] = mapped_column(String(256))
+    success_probability: Mapped[float] = mapped_column(Float)
+    arrival_days: Mapped[int] = mapped_column(Integer)
+    units_recovered: Mapped[int] = mapped_column(Integer)
+    revenue_protected: Mapped[float] = mapped_column(Float)
+    cost: Mapped[float] = mapped_column(Float)
+    net_value: Mapped[float] = mapped_column(Float)
